@@ -1,0 +1,97 @@
+---
+title: "Curve Number Graphs"
+author: "Seth Younger"
+date: '`r format(Sys.time(), "%B %d, %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(scales)
+library(ggrepel)
+
+```
+
+Data for curve number graph
+
+```{r}
+
+# create a sequence of precip from 1 to 300 mm by 1 mm increments
+# create data for all of the curve numbers and make a long dataframe
+cn_data <- data.frame(precip_mm = seq(from = 1, to = 300, by = 1)) %>% 
+  mutate(cn_20 = 20, cn_25 = 25, cn_30 = 30, cn_35 = 35, cn_40 = 40, 
+         cn_45 = 45, cn_50 = 50, cn_55 = 55, cn_60 = 60, cn_65 = 65, 
+         cn_70 = 70, cn_75 = 75, cn_80 = 80, cn_85 = 85, cn_90 = 90,
+         cn_95 = 95, cn_100 = 100) %>%
+  gather(key = cn, value = cn_value, -precip_mm) %>%
+  mutate(S = 25400/cn_value - 254) %>%
+  mutate(Q = ifelse(test = precip_mm > 0.2 * S, 
+                    yes = ((precip_mm - 0.2 * S)^2)/(precip_mm + 0.8 * S), 
+                    no = 0)) %>%
+  mutate(Q = round(Q, 3)) %>%
+  mutate(cn = paste('CN', cn_value))
+
+# this is a little verbose but works
+cn_points <- cn_data %>% filter(precip_mm >= 170 & precip_mm <= 190) %>%
+  filter(precip_mm == 190) %>%
+  arrange(desc(cn_value)) %>%
+  mutate(point_placement = 180) %>%
+  mutate(point_placement_incriment = 6.25) %>%
+  mutate(point_placement_final = cumsum(point_placement_incriment) + point_placement) %>%
+  mutate(point_placement_final = round(point_placement_final, 0))
+
+# create a new set of points for angeled labels
+new_points <- cn_points %>% select(cn, cn_value, point_placement_final)
+
+# combine the new points with all of the data to find the slope at the new points
+new_points_data <- left_join(cn_data, new_points) %>%
+  filter(precip_mm >= (point_placement_final - 5) & precip_mm <= (point_placement_final + 5)) %>%
+  group_by(cn) %>%
+  # calculate max and min for slope
+  mutate(max_p = max(precip_mm), min_p = min(precip_mm),
+         max_q = max(Q), min_q = min(Q)) %>%
+  mutate(rise = max_q - min_q,
+         run = max_p - min_p) %>%
+  mutate(slope = rise / run) %>%
+  # convert slope of lines to degrees
+  mutate(degrees = atan(slope) * 180/pi) %>%
+  filter(precip_mm == point_placement_final) %>%
+  ungroup()
+
+```
+
+Curve number graph
+ 
+```{r fig.height=6, fig.width=8}
+
+ggplot(data = cn_data, aes(x = precip_mm, y = Q, group = cn)) +
+  geom_line(size = 0.25) +
+  #theme_bw() +
+  theme_minimal() +
+  geom_text(data = new_points_data, aes(x = precip_mm, y = Q, label = cn, angle = degrees), 
+            vjust = -0.5, check_overlap = TRUE) +
+  scale_y_continuous(breaks = seq(from = 0, to = 300, by = 25), 
+                     limits = c(0, 200), expand = c(0,0),
+                     minor_breaks = seq(0, 200, 5)) +
+  scale_x_continuous(breaks = seq(from = 0, to = 300, by = 25), 
+                     limits = c(0, 300), expand = c(0,0),
+                     minor_breaks = seq(0, 300, 5)) +
+  labs(x = 'Precipitation (mm)', y = 'Q (mm)') +
+  theme(plot.margin=margin(t=0.3,r=0.5,b=0.1,l=0.1,unit="cm"),
+        panel.grid.major = element_line(colour = "grey85"),
+        panel.grid.minor = element_line(colour = "grey90"))
+
+```
+
+Save the curve number graph to a file.
+
+```{r eval = TRUE}
+
+ggsave(file = 'curve_number_graph.pdf', width = 20, height = 13, units = 'cm')
+ggsave(file = 'curve_number_graph.tiff', width = 20, height = 13, units = 'cm')
+
+```
