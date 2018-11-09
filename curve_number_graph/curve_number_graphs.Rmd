@@ -93,5 +93,6 @@ Save the curve number graph to a file.
 
 ggsave(file = 'curve_number_graph.pdf', width = 20, height = 13, units = 'cm')
 ggsave(file = 'curve_number_graph.tiff', width = 20, height = 13, units = 'cm')
+ggsave(file = 'curve_number_graph.png', width = 20, height = 13, units = 'cm')
 
 ```
