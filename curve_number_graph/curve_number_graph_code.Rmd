@@ -1,0 +1,99 @@
+---
+title: "Curve Number Graph"
+author: "Seth Younger"
+date: '`r format(Sys.time(), "%B %d, %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(scales)
+library(ggrepel)
+
+```
+
+Data for curve number graph. 
+
+First create a sequence of precipitation from 1 to 300 mm by 1 mm increments. Ten ccreate data for all of the curve numbers from 20 to 100 by 5. Generalte all of the possible combinations using expand.grid.
+
+```{r}
+
+cn_data <- expand.grid(precip_mm = seq(from = 1, to = 300, by = 1),
+                       cn_value = seq(from = 20, to = 100, by = 5)) %>%
+  mutate(cn_value = as.numeric(cn_value)) %>%
+  mutate(cn = paste('CN', cn_value)) %>%
+  mutate(S = 25400/cn_value - 254) %>%
+  mutate(Q = ifelse(test = precip_mm > 0.2 * S, 
+                    yes = ((precip_mm - 0.2 * S)^2)/(precip_mm + 0.8 * S), 
+                    no = 0)) %>%
+  mutate(Q = round(Q, 3))
+
+```
+
+Create points to label with curve numbers
+
+```{r}
+
+cn_points <- cn_data %>%
+  filter(precip_mm == 190) %>%
+  arrange(desc(cn_value)) %>%
+  # where to start the CN 100 label
+  mutate(point_placement = 180) %>%
+  # how much each point moves up on the precip axis
+  mutate(point_placement_incriment = 6.35) %>%
+  mutate(point_placement_final = cumsum(point_placement_incriment) + point_placement) %>%
+  mutate(point_placement_final = round(point_placement_final, 0)) %>%
+  select(cn, cn_value, point_placement_final)
+
+# combine the points with all of the data to find the slope at the points
+points_data <- left_join(cn_data, cn_points) %>%
+  filter(precip_mm >= (point_placement_final - 5) & precip_mm <= (point_placement_final + 5)) %>%
+  group_by(cn) %>%
+  # calculate max and min for slope
+  mutate(max_p = max(precip_mm), min_p = min(precip_mm),
+         max_q = max(Q), min_q = min(Q)) %>%
+  mutate(rise = max_q - min_q,
+         run = max_p - min_p) %>%
+  mutate(slope = rise / run) %>%
+  # convert slope of lines to degrees for plotting
+  mutate(degrees = atan(slope) * 180/pi) %>%
+  filter(precip_mm == point_placement_final) %>%
+  ungroup()
+
+```
+
+Curve number graph
+ 
+```{r fig.height=5, fig.width=8}
+
+ggplot(data = cn_data, aes(x = precip_mm, y = Q, group = cn)) +
+  geom_line(size = 0.25) +
+  theme_minimal() +
+  geom_text(data = points_data, aes(x = precip_mm, y = Q, label = cn, angle = degrees), 
+            vjust = -0.5, check_overlap = TRUE) +
+  scale_y_continuous(breaks = seq(from = 0, to = 300, by = 25), 
+                     limits = c(0, 200), expand = c(0,0),
+                     minor_breaks = seq(0, 200, 5)) +
+  scale_x_continuous(breaks = seq(from = 0, to = 300, by = 25), 
+                     limits = c(0, 300), expand = c(0,0),
+                     minor_breaks = seq(0, 300, 5)) +
+  labs(x = 'Precipitation (mm)', y = 'Q (mm)') +
+  theme(plot.margin=margin(t=0.3,r=0.5,b=0.1,l=0.1,unit="cm"),
+        panel.grid.major = element_line(colour = "grey85"),
+        panel.grid.minor = element_line(colour = "grey90"))
+
+```
+
+Save the curve number graph to a file.
+
+```{r eval = TRUE}
+
+ggsave(file = 'curve_number_graph.pdf', width = 20, height = 13, units = 'cm')
+ggsave(file = 'curve_number_graph.tiff', width = 20, height = 13, units = 'cm')
+ggsave(file = 'curve_number_graph.png', width = 20, height = 13, units = 'cm')
+
+```
