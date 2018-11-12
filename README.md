@@ -6,5 +6,5 @@ R code to create this historic graph (source unknown) of precipitation versus fl
 
 This is a reproduction using R code. 
 
-<img src="./curve_number_graph/curve_number_graph.png" width="200">
+<img src="./curve_number_graph/curve_number_graph.png" width="600">
 
