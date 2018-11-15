@@ -10,6 +10,6 @@ The reproduced graph using R code found in the 'curve_number_graph' directory.
 
 # USDA Soil Texture Triangle
 
-Code to produce a soil texture triangel found in 'USDA_soil_texture_triangle'
+Code to produce a soil texture triangle found in 'USDA_soil_texture_triangle'
 
 <img src="./USDA_soil_texture_triangle/USDA_triangle_ggtern.jpg" width="600">
