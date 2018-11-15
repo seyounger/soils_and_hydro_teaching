@@ -1,0 +1,78 @@
+---
+title: "USDA Soil Texture Ternary Diagram"
+author: "Seth Younger"
+date: '`r format(Sys.time(), "%B %d, %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Load the packges needed to make the triangle.
+
+```{r}
+
+library(ggtern)
+library(plyr)
+library(readxl)
+library(dplyr)
+
+```
+
+Create data to draw the triangle. Load data for plotting if you have them.
+
+```{r}
+
+# to graph your own data load them here
+#soil_data <- read_excel('soil_data.xlsx')
+
+# this is the data for the triangle itself
+#Load the Data.
+data(USDA)
+#Put tile labels at the midpoint of each tile.
+USDA.LAB <- ddply(USDA,"Label",function(df){
+  apply(df[,1:3],2,mean)
+})
+#Tweak
+USDA.LAB$Angle = sapply(as.character(USDA.LAB$Label),function(x){
+  switch(x,"Loamy Sand"=-35,0)
+})
+
+```
+
+Construct the ternary diagram
+
+```{r}
+
+ggtern(data=USDA,aes(Sand, Clay, Silt, fill = Label)) +
+  geom_polygon(alpha=0.75,size=0.5,color="black") +
+  scale_fill_manual(values = rep('gray90', times = 17)) +
+  geom_mask() +
+  geom_text(data=USDA.LAB,aes(label=Label,angle=Angle),color="black",size=3.5) +
+  # to add your own data points to the grap use geom_point
+  #geom_point(data = soil_data, aes(shape = Label), size = 3) +
+  #scale_shape_manual(values = c(1, 2, 5, 8,20)) +
+  theme_rgbw() +
+  theme_showsecondary() +
+  theme_showarrows() +
+  weight_percent() +
+  guides(fill='none') +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = c(.85, .7)) +
+  labs(title = "USDA Textural Classification Chart",
+       shape  = "Depth",
+       color = "Depth")
+
+```
+
+Save the graph to a file.
+
+```{r eval = FALSE}
+
+ggsave('USDA_triangle_ggtern.jpg', width = 17, height = 17, units = 'cm', scale = 1.2)
+ggsave('USDA_triangle_ggtern.pdf', width = 17, height = 17, units = 'cm', scale = 1.2)
+
+```
