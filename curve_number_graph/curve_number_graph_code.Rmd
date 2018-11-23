@@ -3,8 +3,8 @@ title: "Curve Number Graph"
 author: "Seth Younger"
 date: '`r format(Sys.time(), "%B %d, %Y")`'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
