@@ -10,6 +10,8 @@ The reproduced graph using R code found in the 'curve_number_graph' directory.
 
 # USDA Soil Texture Triangle
 
+A soil texture triangle that once looked nice but has been photocopied too many times!
+
 <img src="./USDA_soil_texture_triangle/old_triangle.jpg" width="600">
 
 Code to produce a soil texture triangle found in 'USDA_soil_texture_triangle'
