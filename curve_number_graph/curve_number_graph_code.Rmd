@@ -3,8 +3,8 @@ title: "Curve Number Graph"
 author: "Seth Younger"
 date: '`r format(Sys.time(), "%B %d, %Y")`'
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +18,7 @@ library(ggrepel)
 
 Data for curve number graph. 
 
-First create a sequence of precipitation from 1 to 300 mm by 1 mm increments. Ten ccreate data for all of the curve numbers from 20 to 100 by 5. Generalte all of the possible combinations using expand.grid.
+First create a sequence of precipitation from 1 to 300 mm by 1 mm increments. Then create data for all of the curve numbers from 20 to 100 by 5. Generate all of the possible combinations using `expand.grid`.
 
 ```{r}
 
@@ -26,6 +26,7 @@ cn_data <- expand.grid(precip_mm = seq(from = 1, to = 300, by = 1),
                        cn_value = seq(from = 20, to = 100, by = 5)) %>%
   mutate(cn_value = as.numeric(cn_value)) %>%
   mutate(cn = paste('CN', cn_value)) %>%
+  # potential maximum water retention
   mutate(S = 25400/cn_value - 254) %>%
   mutate(Q = ifelse(test = precip_mm > 0.2 * S, 
                     yes = ((precip_mm - 0.2 * S)^2)/(precip_mm + 0.8 * S), 
@@ -81,7 +82,7 @@ ggplot(data = cn_data, aes(x = precip_mm, y = Q, group = cn)) +
   scale_x_continuous(breaks = seq(from = 0, to = 300, by = 25), 
                      limits = c(0, 300), expand = c(0,0),
                      minor_breaks = seq(0, 300, 5)) +
-  labs(x = 'Precipitation (mm)', y = 'Q (mm)') +
+  labs(x = 'Precipitation (P) [mm]', y = 'Runoff (Q) [mm]') +
   theme(plot.margin=margin(t=0.3,r=0.5,b=0.1,l=0.1,unit="cm"),
         panel.grid.major = element_line(colour = "grey85"),
         panel.grid.minor = element_line(colour = "grey90"))
